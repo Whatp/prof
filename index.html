@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>导师升职模拟器</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="side-panel">
+      <div class="brand-block">
+        <svg class="brand-seal" viewBox="0 0 120 120" aria-hidden="true">
+          <defs>
+            <linearGradient id="sealSky" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="#2a8d8d"/>
+              <stop offset="55%" stop-color="#d8a21b"/>
+              <stop offset="100%" stop-color="#cf4b36"/>
+            </linearGradient>
+          </defs>
+          <circle cx="60" cy="60" r="54" fill="#fffaf0" stroke="#203040" stroke-width="4"/>
+          <path d="M28 80 L60 26 L92 80 Z" fill="url(#sealSky)" opacity=".95"/>
+          <path d="M42 80 L42 61 L78 61 L78 80" fill="#203040"/>
+          <path d="M37 88 H83" stroke="#203040" stroke-width="8" stroke-linecap="round"/>
+          <path d="M52 52 H68 M48 63 H72" stroke="#fffaf0" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <p class="eyebrow">Academic Roguelite</p>
+          <h1>导师升职模拟器</h1>
+          <p class="subtitle">从讲师到院士，顺便照看一下良心、学生和热搜。</p>
+        </div>
+      </div>
+
+      <nav class="stage-track" id="stageTrack" aria-label="晋升路线"></nav>
+
+      <div class="mentor-card">
+        <div class="mentor-avatar" id="mentorAvatar">青</div>
+        <div>
+          <p class="mentor-name" id="mentorName">未建档导师</p>
+          <p class="mentor-meta" id="mentorMeta">等待抽取命运</p>
+        </div>
+      </div>
+
+      <div class="clock-block">
+        <div>
+          <span class="label">学术年龄</span>
+          <strong id="ageText">31岁</strong>
+        </div>
+        <div>
+          <span class="label">用时</span>
+          <strong id="timeText">0年0月</strong>
+        </div>
+        <div>
+          <span class="label">当前段位</span>
+          <strong id="rankText">讲师</strong>
+        </div>
+      </div>
+    </aside>
+
+    <main class="game-panel">
+      <section class="top-strip">
+        <div>
+          <p class="eyebrow" id="seasonText">第1学期</p>
+          <h2 id="mainTitle">建立你的导师档案</h2>
+        </div>
+        <div class="utility-actions">
+          <button class="ghost-button" id="saveButton" type="button">保存</button>
+          <button class="ghost-button" id="loadButton" type="button">读取</button>
+          <button class="ghost-button danger" id="restartButton" type="button">重开</button>
+        </div>
+      </section>
+
+      <section class="metrics-grid" id="metricsGrid" aria-label="导师状态"></section>
+
+      <section class="content-grid">
+        <article class="scene-panel" id="scenePanel">
+          <div class="campus-visual" aria-hidden="true">
+            <svg viewBox="0 0 640 210" preserveAspectRatio="none">
+              <path d="M0 152 C82 118 146 125 214 143 C300 166 365 107 448 126 C529 144 568 111 640 92 L640 210 L0 210 Z" fill="#cbe7e4"/>
+              <path d="M0 174 C100 149 171 164 256 176 C341 188 427 147 512 159 C568 166 603 156 640 140 L640 210 L0 210 Z" fill="#e8d184"/>
+              <rect x="66" y="72" width="118" height="102" rx="4" fill="#2b4058"/>
+              <rect x="92" y="42" width="66" height="132" rx="4" fill="#365b74"/>
+              <rect x="236" y="84" width="168" height="90" rx="4" fill="#f4f0e8" stroke="#2b4058" stroke-width="5"/>
+              <path d="M220 84 L320 35 L420 84 Z" fill="#cf4b36"/>
+              <rect x="282" y="116" width="76" height="58" fill="#2b4058"/>
+              <rect x="465" y="58" width="76" height="116" rx="34" fill="#2a8d8d"/>
+              <rect x="493" y="112" width="21" height="62" fill="#715b3d"/>
+              <circle cx="533" cy="59" r="32" fill="#d8a21b" opacity=".85"/>
+            </svg>
+          </div>
+          <div class="scene-copy">
+            <p class="scene-kicker" id="sceneKicker">建档处</p>
+            <h3 id="sceneTitle">选择开局条件</h3>
+            <p id="sceneBody">你的第一间办公室还没完全收拾好，电脑里已经躺着三封催交材料邮件。</p>
+          </div>
+          <div class="choice-list" id="choiceList"></div>
+        </article>
+
+        <aside class="briefing-panel">
+          <div class="goal-block">
+            <div class="section-heading">
+              <span>晋升门槛</span>
+              <button id="promotionButton" class="compact-button" type="button">申请晋升</button>
+            </div>
+            <div id="goalList" class="goal-list"></div>
+          </div>
+
+          <div class="badges-block">
+            <div class="section-heading">
+              <span>履历标签</span>
+              <small id="badgeCount">0枚</small>
+            </div>
+            <div id="badgeList" class="badge-list"></div>
+          </div>
+
+          <div class="log-block">
+            <div class="section-heading">
+              <span>近况记录</span>
+              <small>最近8条</small>
+            </div>
+            <ol id="logList" class="log-list"></ol>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
