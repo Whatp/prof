@@ -536,6 +536,134 @@ button:disabled {
   opacity: .55;
 }
 
+.save-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(16, 24, 32, .42);
+}
+
+.save-modal {
+  width: min(620px, 100%);
+  max-height: min(760px, calc(100vh - 40px));
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, .42);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: 0 24px 70px rgba(12, 20, 28, .28);
+}
+
+.save-modal-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.save-modal-head h3 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ink);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.save-modal-body {
+  display: grid;
+  gap: 16px;
+  max-height: calc(100vh - 130px);
+  overflow: auto;
+  padding: 20px;
+}
+
+.save-field {
+  display: grid;
+  gap: 8px;
+}
+
+.save-field span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.modal-actions .start-button {
+  flex: 1;
+}
+
+.save-slot-list {
+  display: grid;
+  gap: 10px;
+}
+
+.save-slot-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.save-slot-card strong,
+.save-slot-card span,
+.save-slot-card small {
+  display: block;
+}
+
+.save-slot-card strong {
+  margin-bottom: 5px;
+  font-size: 17px;
+}
+
+.save-slot-card span {
+  color: #405060;
+  line-height: 1.45;
+}
+
+.save-slot-card small {
+  margin-top: 6px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.slot-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.empty-state {
+  margin: 0;
+  padding: 16px;
+  border: 1px dashed var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  background: #f8fafc;
+  line-height: 1.6;
+}
+
 .briefing-panel {
   display: grid;
   gap: 18px;
@@ -695,6 +823,18 @@ button:disabled {
   .clock-block,
   .radio-group {
     grid-template-columns: 1fr;
+  }
+
+  .save-slot-card {
+    grid-template-columns: 1fr;
+  }
+
+  .slot-actions {
+    flex-wrap: wrap;
+  }
+
+  .slot-actions button {
+    flex: 1;
   }
 
   .utility-actions {
