@@ -298,6 +298,8 @@ const promotionStrategies = [
 ];
 
 const names = ["林知远", "陈半山", "许问渠", "赵不眠", "周砚秋", "顾明仪", "沈向北", "何见微"];
+const SAVE_SLOTS_KEY = "mentor-promotion-sim-save-slots";
+const LEGACY_SAVE_KEY = "mentor-promotion-sim-save";
 
 let state = createBlankState();
 
@@ -856,18 +858,114 @@ function saveGame() {
     showToast("先处理完当前事件或评审，再保存这条命运线。");
     return;
   }
-  localStorage.setItem("mentor-promotion-sim-save", JSON.stringify(state));
-  showToast("已保存当前学术命运。");
+  openSaveDialog();
 }
 
 function loadGame() {
-  const raw = localStorage.getItem("mentor-promotion-sim-save");
-  if (!raw) {
+  const saves = getSaveSlots();
+  if (!saves.length) {
     showToast("没有找到存档。");
     return;
   }
+  openLoadDialog(saves);
+}
+
+function getSaveSlots() {
+  const slots = readSaveSlots();
+  const legacy = readLegacySave();
+  if (legacy && !slots.some(slot => slot.id === legacy.id)) {
+    return [legacy, ...slots];
+  }
+  return slots;
+}
+
+function readSaveSlots() {
   try {
-    state = JSON.parse(raw);
+    const raw = localStorage.getItem(SAVE_SLOTS_KEY);
+    if (!raw) return [];
+    const slots = JSON.parse(raw);
+    if (!Array.isArray(slots)) return [];
+    return slots.filter(slot => slot && slot.id && slot.state);
+  } catch (error) {
+    return [];
+  }
+}
+
+function readLegacySave() {
+  try {
+    const raw = localStorage.getItem(LEGACY_SAVE_KEY);
+    if (!raw) return null;
+    const legacyState = JSON.parse(raw);
+    if (!legacyState || !legacyState.started) return null;
+    return {
+      id: "legacy-single-save",
+      name: "旧版自动存档",
+      updatedAt: legacyState.savedAt || new Date().toISOString(),
+      summary: buildSaveSummary(legacyState),
+      state: legacyState,
+      legacy: true
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function persistSaveSlots(slots) {
+  const normalized = slots
+    .filter(slot => slot && slot.id !== "legacy-single-save")
+    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+  localStorage.setItem(SAVE_SLOTS_KEY, JSON.stringify(normalized));
+}
+
+function createSaveSlot(name, existingId = null) {
+  const savedState = JSON.parse(JSON.stringify(state));
+  savedState.savedAt = new Date().toISOString();
+  const trimmedName = (name || "").trim() || defaultSaveName(savedState);
+  return {
+    id: existingId || `save-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    name: trimmedName.slice(0, 32),
+    updatedAt: savedState.savedAt,
+    summary: buildSaveSummary(savedState),
+    state: savedState
+  };
+}
+
+function defaultSaveName(saveState = state) {
+  const rank = ranks[saveState.rankIndex]?.name || "未知段位";
+  const mentor = saveState.mentor?.name || "未命名导师";
+  const years = Math.floor((saveState.months || 0) / 12);
+  const months = (saveState.months || 0) % 12;
+  return `${mentor}-${rank}-${years}年${months}月`;
+}
+
+function buildSaveSummary(saveState) {
+  const rank = ranks[saveState.rankIndex]?.name || "未知段位";
+  const years = Math.floor((saveState.months || 0) / 12);
+  const months = (saveState.months || 0) % 12;
+  const status = saveState.gameOver ? `结局：${saveState.gameOver.title}` : "进行中";
+  return `${rank} · ${years}年${months}月 · ${saveState.age || 31}岁 · ${status}`;
+}
+
+function saveToSlot(name, existingId = null) {
+  const slots = readSaveSlots();
+  const slot = createSaveSlot(name, existingId);
+  const nextSlots = existingId
+    ? slots.map(item => item.id === existingId ? slot : item)
+    : [slot, ...slots];
+  if (existingId && !slots.some(item => item.id === existingId)) nextSlots.unshift(slot);
+  persistSaveSlots(nextSlots);
+  closeSaveDialog();
+  showToast(`已保存为「${slot.name}」。`);
+}
+
+function deleteSaveSlot(id) {
+  const slots = readSaveSlots().filter(slot => slot.id !== id);
+  persistSaveSlots(slots);
+}
+
+function loadSaveSlot(slot) {
+  try {
+    state = JSON.parse(JSON.stringify(slot.state));
     if (state.gameOver) state.mode = "gameover";
     if (state.mode !== "normal" && state.mode !== "gameover") {
       state.mode = "normal";
@@ -878,10 +976,134 @@ function loadGame() {
       renderNormalScene("存档读取成功", "你回到了熟悉的办公室，邮件仍然没有少。");
     }
     render();
-    showToast("存档已读取。");
+    closeSaveDialog();
+    showToast(`已读取「${slot.name}」。`);
   } catch (error) {
     showToast("存档损坏，读取失败。");
   }
+}
+
+function openSaveDialog() {
+  const saves = getSaveSlots();
+  openSaveModal({
+    title: "保存进度",
+    body: `
+      <label class="save-field">
+        <span>存档名称</span>
+        <input id="saveNameInput" class="text-input" type="text" maxlength="32" value="${escapeHtml(defaultSaveName())}">
+      </label>
+      <div class="modal-actions">
+        <button class="start-button" type="button" data-action="save-new">保存为新存档</button>
+      </div>
+      ${renderSaveSlotList(saves, "save")}
+    `
+  });
+  document.getElementById("saveNameInput")?.focus();
+}
+
+function openLoadDialog(saves = getSaveSlots()) {
+  openSaveModal({
+    title: "读取进度",
+    body: renderSaveSlotList(saves, "load")
+  });
+}
+
+function renderSaveSlotList(saves, mode) {
+  if (!saves.length) {
+    return `<p class="empty-state">还没有存档。先去把导师命运推进几个月吧。</p>`;
+  }
+  const cards = saves.map(slot => `
+    <article class="save-slot-card">
+      <div>
+        <strong>${escapeHtml(slot.name)}</strong>
+        <span>${escapeHtml(slot.summary)}</span>
+        <small>${formatSaveDate(slot.updatedAt)}${slot.legacy ? " · 旧版存档" : ""}</small>
+      </div>
+      <div class="slot-actions">
+        ${mode === "load"
+          ? `<button type="button" class="compact-button" data-action="load" data-save-id="${escapeHtml(slot.id)}">读取</button>`
+          : `<button type="button" class="compact-button" data-action="overwrite" data-save-id="${escapeHtml(slot.id)}">覆盖</button>`}
+        ${slot.legacy ? "" : `<button type="button" class="ghost-button danger" data-action="delete" data-save-id="${escapeHtml(slot.id)}">删除</button>`}
+      </div>
+    </article>
+  `).join("");
+  return `<div class="save-slot-list">${cards}</div>`;
+}
+
+function openSaveModal({ title, body }) {
+  closeSaveDialog();
+  const modal = document.createElement("div");
+  modal.className = "save-modal-backdrop";
+  modal.innerHTML = `
+    <section class="save-modal" role="dialog" aria-modal="true" aria-labelledby="saveModalTitle">
+      <div class="save-modal-head">
+        <h3 id="saveModalTitle">${escapeHtml(title)}</h3>
+        <button class="icon-button" type="button" data-action="close" aria-label="关闭">×</button>
+      </div>
+      <div class="save-modal-body">${body}</div>
+    </section>
+  `;
+  modal.addEventListener("click", handleSaveModalClick);
+  document.body.appendChild(modal);
+}
+
+function closeSaveDialog() {
+  document.querySelector(".save-modal-backdrop")?.remove();
+}
+
+function handleSaveModalClick(event) {
+  const action = event.target?.dataset?.action;
+  if (event.target.classList.contains("save-modal-backdrop") || action === "close") {
+    closeSaveDialog();
+    return;
+  }
+  if (!action) return;
+  const saveId = event.target.dataset.saveId;
+  const saves = getSaveSlots();
+  const slot = saves.find(item => item.id === saveId);
+
+  if (action === "save-new") {
+    saveToSlot(document.getElementById("saveNameInput")?.value);
+  }
+  if (action === "overwrite" && slot) {
+    const inputName = document.getElementById("saveNameInput")?.value || slot.name;
+    saveToSlot(inputName, slot.legacy ? null : slot.id);
+  }
+  if (action === "load" && slot) {
+    loadSaveSlot(slot);
+  }
+  if (action === "delete" && slot) {
+    const isSavePanel = !!document.getElementById("saveNameInput");
+    deleteSaveSlot(slot.id);
+    if (isSavePanel) {
+      openSaveDialog();
+    } else {
+      openLoadDialog(getSaveSlots());
+    }
+    showToast(`已删除「${slot.name}」。`);
+  }
+}
+
+function formatSaveDate(value) {
+  const date = value ? new Date(value) : new Date();
+  if (Number.isNaN(date.getTime())) return "保存时间未知";
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function showToast(text) {
